@@ -1,124 +1,226 @@
 <!doctype html>
 <html lang="zh-Hant">
+
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CCFOLIA 聊天室辨識樣式工具</title>
-<style>
-:root{color-scheme:dark;--bg:#10131a;--panel:#1a202b;--line:#343d4d;--text:#eef2f8;--muted:#aab5c6;--accent:#7da9ff}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Noto Sans TC",sans-serif}
-main{max-width:1100px;margin:auto;padding:20px 16px 60px}h1{font-size:1.55rem;margin:0 0 6px}.sub{color:var(--muted);margin:0 0 18px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
-label{display:block;font-weight:650;margin-bottom:6px}input[type=file],input[type=text],select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:#10151e;color:var(--text)}
-.options{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.check{display:flex;align-items:flex-start;gap:9px;font-weight:500}.check input{margin-top:5px}
-button{border:0;border-radius:9px;padding:11px 15px;background:var(--accent);color:#101725;font-weight:750;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
-.note{font-size:.9rem;color:var(--muted)}.status{margin-top:10px;color:#b9d5ff;overflow-wrap:anywhere}
-.preview{background:#0d1016;border-radius:10px;padding:12px;max-height:65vh;overflow:auto}.msg{position:relative;padding:13px 14px;margin:0 0 10px;background:#171c25;border:1px solid #2b3340;border-radius:10px;overflow-wrap:anywhere}.meta{font-size:.86rem;color:#aeb9c9;margin-bottom:6px;display:flex;gap:8px;flex-wrap:wrap}.room{font-weight:800}.speaker{font-weight:750}.msg p{margin:0 0 8px}.msg p:last-child{margin-bottom:0}.msg img{max-width:100%;height:auto}
-.msg.mode-bg{background:var(--room-bg,#202633)}.msg.mode-border{border-left:5px solid var(--room-color,#8795aa)}.msg.mode-label{padding-left:16px}.side-label{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:10px 0 0 10px;background:var(--room-color,#8795aa)}.msg.mode-tag .room{display:inline-block;border:1px solid var(--room-color,#8795aa);border-radius:5px;padding:1px 7px;background:#111722}.msg.mode-stripe{background:linear-gradient(90deg,var(--room-tint,#202633),#171c25 36%)}
-.msg.hide-room .room{display:none}.msg.mode-bg .room{color:var(--room-text,#fff)}.msg.system{font-style:italic;color:#aeb8c8}
-@media(max-width:600px){main{padding:14px 10px 40px}.panel{padding:12px}.preview{padding:7px}.msg{padding:11px}.meta{gap:5px}}
-</style></head>
-<body><main>
-<h1>CCFOLIA 聊天室辨識樣式工具</h1>
-<p class="sub">匯入 CCFOLIA 匯出的 HTML 聊天紀錄，選擇辨識方式、預覽後輸出新的 HTML。原始檔不會被修改。</p>
-<section class="panel">
-<label for="file">① 選擇聊天紀錄 HTML</label><input id="file" type="file" accept=".html,.htm,text/html">
-<p class="note">支援兩種格式：舊版以每則訊息的 <code>&lt;p&gt;</code> 保存、聊天室標籤位於第一個 span；新版以 <code>.message</code> / <code>.channel-name</code> 保存。工具會保留訊息文字、換行及訊息順序。</p>
-<div id="status" class="status">尚未載入檔案。</div>
-</section>
-<section class="panel">
-<h2 style="font-size:1.1rem;margin-top:0">② 選擇辨識方式</h2>
-<div class="options">
-<label class="check"><input type="checkbox" id="bg" checked> <span>聊天室背景色<br><small class="note">每個聊天室使用不同淡色背景</small></span></label>
-<label class="check"><input type="checkbox" id="border" checked> <span>左側彩色外框<br><small class="note">快速掃視時辨識更明顯</small></span></label>
-<label class="check"><input type="checkbox" id="tag" checked> <span>聊天室標籤膠囊<br><small class="note">在訊息資訊列顯示標籤</small></span></label>
-<label class="check"><input type="checkbox" id="side"> <span>側邊色條<br><small class="note">以細色條輔助辨識</small></span></label>
-<label class="check"><input type="checkbox" id="stripe"> <span>左側漸層底色<br><small class="note">較低干擾的區分方式</small></span></label>
-<label class="check"><input type="checkbox" id="hide"> <span>隱藏重複聊天室標籤<br><small class="note">不建議和其他標籤樣式一起使用</small></span></label>
-<label class="check"><input type="checkbox" id="group"> <span>聊天室切換時加分隔標題<br><small class="note">連續訊息換聊天室時插入醒目標題</small></span></label>
-<label class="check"><input type="checkbox" id="speaker" checked> <span>保留說話者名稱與原色</span></label>
-</div>
-<div class="options" style="margin-top:14px">
-<div><label for="palette">配色方案</label><select id="palette"><option value="soft">柔和低彩度（推薦）</option><option value="vivid">高辨識度</option><option value="mono">灰階＋彩色標記</option></select></div>
-<div><label for="width">內容寬度</label><select id="width"><option value="960">960px（閱讀舒適）</option><option value="1200">1200px（桌面寬版）</option><option value="100%">全寬</option></select></div>
-<div><label for="title">輸出頁面標題（可修改）</label><input id="title" type="text" value="CCFOLIA 聊天紀錄（聊天室辨識版）"></div>
-</div>
-<div class="actions"><button id="previewBtn" disabled>③ 產生／更新預覽</button><button id="downloadBtn" disabled>④ 下載全新 HTML</button></div>
-</section>
-<section class="panel"><h2 style="font-size:1.1rem;margin-top:0">預覽</h2><p class="note">預覽最多顯示前 250 則，避免手機載入大量訊息時卡頓；下載檔會包含完整訊息。</p><div id="preview" class="preview">載入檔案後按「產生／更新預覽」。</div></section>
-</main>
-<script>
-(function(){
-const $=id=>document.getElementById(id);let sourceMessages=[],sourceName='chatlog.html',detectedFormat='',lastOutput='';
-const palettes={
- soft:[['#e5edf9','#385b8c','#172a43'],['#f9e9df','#9a5c3d','#3c251a'],['#e5f3e8','#39764c','#193323'],['#f3e7fa','#80509b','#321d40'],['#f8f0cf','#8b7528','#342b10'],['#e5f0f0','#3f7777','#183333'],['#f6e1e8','#a34e6c','#401e2a']],
- vivid:[['#d8e8ff','#1764c0','#10294a'],['#ffe0ce','#c6531c','#4a210d'],['#d7f8df','#17813a','#10351d'],['#f0dcff','#8536b8','#351348'],['#fff2b8','#a17c00','#453400'],['#d4fbfa','#087d80','#0b393a'],['#ffdce6','#b52855','#4d1024']],
- mono:[['#e7e7e7','#666','#222'],['#ddd','#888','#222'],['#eee','#555','#222'],['#d4d4d4','#777','#222'],['#f0f0f0','#444','#222'],['#e2e2e2','#666','#222'],['#d9d9d9','#888','#222']]
-};
-function clean(s){return (s||'').replace(/\s+/g,' ').trim()}
-function roomFrom(text){let t=clean(text);let m=t.match(/^\[([^\]]+)\]/);return m?'['+m[1]+']':'[未分類]'}
-function addMessage(room,speaker,time,content,color,system){sourceMessages.push({room:roomFrom(room),speaker:clean(speaker)||'未知說話者',time:clean(time),content:content||'',color:color||'',system:!!system})}
-function parse(html){
- sourceMessages=[];const doc=new DOMParser().parseFromString(html,'text/html');
- const modern=doc.querySelectorAll('.message').length>0;
- if(modern){
-  doc.querySelectorAll('.message').forEach(el=>{
-   const ch=el.querySelector('.channel-name'),sp=el.querySelector('.speaker'),tm=el.querySelector('time'),tx=el.querySelector('.message-text');
-   if(!tx)return;
-   const col=sp?(sp.style.getPropertyValue('--speaker-color')||((sp.getAttribute('style')||'').match(/color\s*:\s*(#[\da-f]+)/i)||[])[1]||''):'';
-   addMessage(ch?ch.textContent:'',sp?sp.textContent:'',tm?(tm.textContent||tm.getAttribute('datetime')):'',tx.innerHTML,col,el.classList.contains('system'));
-  });detectedFormat='新版（.message / .channel-name）';
- }else{
-  doc.querySelectorAll('body > p, body p').forEach(el=>{
-   const spans=Array.from(el.children).filter(x=>x.tagName==='SPAN');
-   if(spans.length<2)return;
-   let room='',speaker='',content='',color=el.style.color||'';
-   room=spans[0].textContent;speaker=spans[1].textContent;
-   const colon=Array.from(el.childNodes).find(n=>n.nodeType===3&&n.textContent.includes(':'));
-   // The message body is normally the last span, which also preserves line breaks.
-   content=spans.length>=3?spans.slice(2).map(x=>x.innerHTML).join(' '):'';
-   if(!content){const all=el.querySelectorAll('span');if(all.length>=3)content=all[all.length-1].innerHTML}
-   if(!content){
-    const raw=el.innerHTML;let after=raw;
-    const matches=[...raw.matchAll(/<\/span>/gi)];if(matches.length>=2)after=raw.slice(matches[1].index+7).replace(/^\s*:\s*/,'').replace(/<\/p>\s*$/i,'');
-    content=after;
-   }
-   addMessage(room,speaker,'',content,color,room.includes('[main]'));
-  });
-  detectedFormat='舊版（每則訊息以 <p> 保存）';
- }
- return {count:sourceMessages.length,format:detectedFormat};
-}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function buildOutput(limit){
- const opts={bg:$('bg').checked,border:$('border').checked,tag:$('tag').checked,side:$('side').checked,stripe:$('stripe').checked,hide:$('hide').checked,group:$('group').checked,speaker:$('speaker').checked};
- const palette=palettes[$('palette').value]||palettes.soft,rooms=[...new Set(sourceMessages.map(m=>m.room))],map={};rooms.forEach((r,i)=>map[r]=palette[i%palette.length]);
- const width=$('width').value,title=$('title').value.trim()||'CCFOLIA 聊天紀錄';
- let body='',prev='';
- sourceMessages.slice(0,limit||sourceMessages.length).forEach(m=>{
-  const c=map[m.room]||palette[0],classes=['msg'];if(opts.bg)classes.push('mode-bg');if(opts.border)classes.push('mode-border');if(opts.tag)classes.push('mode-tag');if(opts.side)classes.push('mode-side');if(opts.stripe)classes.push('mode-stripe');if(opts.hide)classes.push('hide-room');if(m.system)classes.push('system');
-  if(opts.group&&m.room!==prev)body+='<div class="room-divider" style="--room-color:'+c[1]+'"><span>'+escapeHtml(m.room)+'</span></div>';
-  body+='<article class="'+classes.join(' ')+'" style="--room-bg:'+c[0]+';--room-color:'+c[1]+';--room-text:'+c[2]+';--room-tint:'+c[0]+'">'+(opts.side?'<i class="side-label"></i>':'')+'<div class="meta"><span class="room" style="color:'+c[1]+'">'+escapeHtml(m.room)+'</span>'+(opts.speaker?'<span class="speaker" '+(m.color?'style="color:'+escapeHtml(m.color)+'"':'')+'>'+escapeHtml(m.speaker)+'</span>':'<span class="speaker">'+escapeHtml(m.speaker)+'</span>')+(m.time?'<time>'+escapeHtml(m.time)+'</time>':'')+'</div><div class="content">'+m.content+'</div></article>';
-  prev=m.room;
- });
- return '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escapeHtml(title)+'</title><style>'+
- ' :root{color-scheme:dark;background:#10131a;color:#edf1f7}*{box-sizing:border-box}body{margin:0;background:#10131a;color:#edf1f7;font:15px/1.6 system-ui,-apple-system,"Noto Sans TC",sans-serif}.wrap{max-width:'+width+';margin:auto;padding:20px 16px 60px}h1{font-size:1.5rem}.msg{position:relative;padding:13px 14px;margin:0 0 10px;background:#171c25;border:1px solid #2b3340;border-radius:10px;overflow-wrap:anywhere}.meta{display:flex;gap:9px;flex-wrap:wrap;font-size:.86rem;color:#aeb9c9;margin-bottom:6px}.speaker{font-weight:750}.room{font-weight:800}.content p{margin:0 0 8px}.content img{max-width:100%;height:auto}.mode-bg{background:var(--room-bg)}.mode-border{border-left:5px solid var(--room-color)}.mode-tag .room{display:inline-block;border:1px solid var(--room-color);border-radius:5px;padding:0 7px;background:#111722}.mode-stripe{background:linear-gradient(90deg,var(--room-tint),#171c25 38%)}.side-label{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:10px 0 0 10px;background:var(--room-color)}.hide-room .room{display:none}.system{font-style:italic;color:#aeb8c8}.room-divider{margin:22px 0 12px;padding:8px 12px;border-left:6px solid var(--room-color);background:#202633;font-weight:800;border-radius:5px}.room-divider span{color:#fff}@media(max-width:600px){.wrap{padding:12px 8px 40px}.msg{padding:11px}.meta{gap:6px}}'+
- '</style></head><body><main class="wrap"><h1>'+escapeHtml(title)+'</h1><p>共 '+sourceMessages.length+' 則訊息｜聊天室辨識版</p>'+body+'</main></body></html>';
-}
-function renderPreview(){
- const html=buildOutput(250);lastOutput=buildOutput();const doc=new DOMParser().parseFromString(html,'text/html');$('preview').innerHTML=doc.body.innerHTML;
- $('downloadBtn').disabled=!sourceMessages.length;
-}
-$('file').addEventListener('change',async e=>{
- const f=e.target.files&&e.target.files[0];if(!f)return;sourceName=f.name;
- try{const html=await f.text();const r=parse(html);$('status').textContent='已載入：'+f.name+'｜格式判定：'+r.format+'｜解析到 '+r.count+' 則訊息'+(r.count===0?'。未能辨識格式，請確認是否為 CCFOLIA 匯出的 HTML。':'。');
- $('previewBtn').disabled=r.count===0;$('downloadBtn').disabled=true;$('preview').textContent=r.count?'按「產生／更新預覽」查看樣式。':'沒有解析到訊息。';
- }catch(err){$('status').textContent='讀取失敗：'+err.message}
-});
-$('previewBtn').addEventListener('click',renderPreview);
-['bg','border','tag','side','stripe','hide','group','speaker','palette','width','title'].forEach(id=>$(id).addEventListener('change',()=>{if(sourceMessages.length)renderPreview()}));
-$('downloadBtn').addEventListener('click',()=>{
- if(!lastOutput)lastOutput=buildOutput();const blob=new Blob([lastOutput],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=(sourceName.replace(/\.(html?|HTML?)$/,'')||'chatlog')+'_聊天室辨識版.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
-});
-})();
-</script></body></html>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>CCFOLIA 聊天室辨識樣式工具</title>
+    <style>
+        :root{color-scheme:dark;--bg:#10131a;--panel:#1a202b;--line:#343d4d;--text:#eef2f8;--muted:#aab5c6;--accent:#7da9ff}
+        *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Noto Sans TC",sans-serif}
+        main{max-width:1100px;margin:auto;padding:20px 16px 60px}h1{font-size:1.55rem;margin:0 0 6px;color:var(--text);font-weight:850;letter-spacing:.01em}.sub{color:var(--muted);margin:0 0 18px}
+        .drop-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:180px;padding:22px 14px;border:2px dashed #58677d;border-radius:12px;background:rgba(125,169,255,.045);text-align:center;transition:border-color .15s,background .15s}
+        .drop-zone.dragover{border-color:var(--accent);background:rgba(125,169,255,.12)}
+        .drop-icon{font-size:27px;line-height:1;color:var(--accent)}.drop-hint{font-size:.85rem;color:var(--muted)}
+        .file-pick{display:inline-block;margin:0;padding:9px 14px;border-radius:8px;background:var(--accent);color:#101725;font-weight:750;cursor:pointer}
+        #file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.drop-filename{font-size:.85rem;color:var(--muted);overflow-wrap:anywhere}
+        .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+        label{display:block;font-weight:650;margin-bottom:6px}input[type=file],input[type=text],select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:#10151e;color:var(--text)}
+        .options{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.check{display:flex;align-items:flex-start;gap:9px;font-weight:500}.check input{margin-top:5px}
+        button{border:0;border-radius:9px;padding:11px 15px;background:var(--accent);color:#101725;font-weight:750;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+        .note{font-size:.9rem;color:var(--muted)}.status{margin-top:10px;color:#b9d5ff;overflow-wrap:anywhere}
+        .advanced{margin-top:16px;border:1px solid var(--line);border-radius:10px;padding:12px;background:rgba(0,0,0,.08)}
+        .advanced summary{cursor:pointer;font-weight:800;padding:3px 2px}.room-settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-top:12px}
+        .room-setting{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+        .room-setting-title{font-weight:800;margin-bottom:8px;overflow-wrap:anywhere}
+        .color-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}.color-control{display:flex;align-items:center;gap:8px;font-size:.88rem}
+        input[type=color]{width:42px;height:36px;padding:2px;border:1px solid var(--line);border-radius:7px;background:transparent;flex-shrink:0}
+        .color-hex{font:12px ui-monospace,monospace;color:var(--muted);overflow-wrap:anywhere}
+        .preview{background:transparent;border-radius:10px;padding:0;overflow:hidden}.preview-frame{display:block;width:100%;height:65vh;min-height:400px;border:0;border-radius:10px;background:transparent}.msg{position:relative;padding:13px 14px;margin:0 0 10px;background:var(--room-bg,#fff);border:1px solid #d9dee7;border-radius:10px;overflow-wrap:anywhere}.meta{font-size:.86rem;color:var(--room-meta,#596273);margin-bottom:6px;display:flex;gap:8px;flex-wrap:wrap}.room{font-weight:800}.speaker{font-weight:750}.msg p{margin:0 0 8px}.msg p:last-child{margin-bottom:0}.msg img{max-width:100%;height:auto}.content,.content *{color:var(--room-text,#252b34)!important}.content a{color:var(--room-color,#245db3)!important}
+        .msg.mode-bg{background:var(--room-bg,#202633)}.msg.mode-border{border:1px solid var(--room-border,var(--room-color,#8795aa))}.msg.mode-label{padding-left:16px}.side-label{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:10px 0 0 10px;background:var(--room-color,#8795aa)}.msg.mode-tag .room{display:inline-block;border:1px solid var(--room-color,#8795aa);border-radius:5px;padding:1px 7px;background:var(--room-tag-bg,#ffffff)}.msg.mode-stripe{background:linear-gradient(90deg,var(--room-tint,#202633),var(--room-bg,#fff) 88%)}
+        .msg.hide-room .room{display:none}.msg.mode-bg .room{color:var(--room-text,#fff)}.msg.system{font-style:italic;color:#aeb8c8}
+        @media(max-width:600px){main{padding:14px 10px 40px}.panel{padding:12px}.preview-frame{height:65vh;min-height:360px}.msg{padding:11px}.meta{gap:5px}}
+    </style>
+</head>
+
+<body>
+    <main>
+        <h1>CCFOLIA 聊天室辨識樣式工具</h1>
+        <p class="sub">匯入 CCFOLIA 匯出的 HTML 聊天紀錄，選擇辨識方式、預覽後輸出新的 HTML。原始檔不會被修改。</p>
+        <section class="panel">
+            <label>① 選擇聊天紀錄 HTML</label>
+            <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="拖曳 HTML 檔案到此處，或點擊選擇檔案">
+                <div class="drop-icon">⇧</div>
+                <strong>將聊天紀錄 HTML 檔案拖曳到這裡</strong>
+                <span class="drop-hint">或</span>
+                <label class="file-pick" for="file">點擊選擇檔案</label>
+                <span class="drop-filename" id="fileName">尚未選擇檔案</span>
+                <input id="file" type="file" accept=".html,.htm,text/html">
+            </div>
+            <p class="note">支援新舊兩種格式。聊天室標籤會優先沿用該聊天室常見的說話者姓名顏色；主頻道、情報等沒有姓名顏色的聊天室則使用備用色。訊息本文統一使用高對比文字，避免舊版原本的橘色／彩色文字落在淡色底上難以閱讀。</p>
+            <div id="status" class="status">尚未載入檔案。</div>
+        </section>
+        <section class="panel">
+            <h2 style="font-size:1.1rem;margin-top:0">② 選擇辨識方式</h2>
+            <div class="options">
+                <label class="check"><input type="checkbox" id="bg" checked> <span>聊天室背景色<br><small class="note">支援淺色與深色底，文字會依背景調整為高對比同色系</small></span></label>
+                <label class="check"><input type="checkbox" id="border" checked> <span>彩色外框<br><small class="note">只改變整體外框顏色，不加粗左側</small></span></label>
+                <label class="check"><input type="checkbox" id="tag" checked> <span>聊天室標籤膠囊<br><small class="note">在訊息資訊列顯示標籤</small></span></label>
+                <label class="check"><input type="checkbox" id="side"> <span>側邊色條<br><small class="note">以細色條輔助辨識</small></span></label>
+                <label class="check"><input type="checkbox" id="stripe"> <span>左側漸層底色<br><small class="note">較低干擾的區分方式</small></span></label>
+                <label class="check"><input type="checkbox" id="hide"> <span>隱藏重複聊天室標籤<br><small class="note">不建議和其他標籤樣式一起使用</small></span></label>
+                <label class="check"><input type="checkbox" id="group"> <span>聊天室切換時加分隔標題<br><small class="note">連續訊息換聊天室時插入醒目標題</small></span></label>
+                <label class="check"><input type="checkbox" id="speaker" checked> <span>保留說話者名稱與原色</span></label>
+            </div>
+            <div class="options" style="margin-top:14px">
+                <div><label for="palette">配色方案</label><select id="palette">
+                        <option value="light">淺色柔和高對比（推薦）</option>
+                        <option value="lightVivid">淺色鮮明</option>
+                        <option value="soft">深色柔和高對比</option>
+                        <option value="vivid">深色高辨識度</option>
+                        <option value="mono">灰階＋彩色標記</option>
+                    </select></div>
+                <div><label for="width">內容寬度</label><select id="width">
+                        <option value="960">960px（閱讀舒適）</option>
+                        <option value="1200">1200px（桌面寬版）</option>
+                        <option value="100%">全寬</option>
+                    </select></div>
+                <div><label for="title">輸出頁面標題（可修改）</label><input id="title" type="text" value="CCFOLIA 聊天紀錄（聊天室辨識版）"></div>
+            </div>
+            <details id="advanced" class="advanced">
+                <summary>進階設定：自訂每個聊天室的背景色與文字色</summary>
+                <p class="note">預設會先讀取原始紀錄中說話者的顏色，再自動產生同色系的背景色與較深文字色。沒有原始顏色的聊天室會使用備用色。改色後會即時更新預覽，匯出的 HTML 也會保留這些設定。</p>
+                <div id="roomColorSettings" class="room-settings">
+                    <p class="note">載入聊天紀錄後，這裡會出現各聊天室的顏色設定。</p>
+                </div>
+            </details>
+            <div class="actions"><button id="previewBtn" disabled>③ 產生／更新預覽</button><button id="downloadBtn" disabled>④ 下載全新 HTML</button></div>
+        </section>
+        <section class="panel">
+            <h2 style="font-size:1.1rem;margin-top:0">預覽</h2>
+            <p class="note">預覽最多顯示前 250 則，避免手機載入大量訊息時卡頓；下載檔會包含完整訊息。</p>
+            <div id="preview" class="preview">載入檔案後按「產生／更新預覽」。</div>
+        </section>
+    </main>
+    <script>
+        (function(){
+        const $=id=>document.getElementById(id);let sourceMessages=[],sourceName='chatlog.html',detectedFormat='',lastOutput='';
+        const palettes={
+         light:[['#fff0e3','#8b430d','#4b260d'],['#ffe8d9','#8b3e10','#4b260d'],['#e4f7e9','#176b35','#123f23'],['#f2e5ff','#64359a','#3d1f61'],['#fff4c7','#725400','#493600'],['#ddf7f6','#146d6a','#104543'],['#ffe3ec','#963c5d','#542034']],
+         lightVivid:[['#ffe0c2','#8a3900','#4a2000'],['#ffdbc8','#8b3200','#4a1d00'],['#d5f7dd','#12652c','#103c1c'],['#ead7ff','#5d2796','#35145b'],['#fff0a8','#6a4b00','#403000'],['#c9f6f3','#075e5b','#083f3d'],['#ffd6e4','#8b2049','#51152b']],
+         soft:[['#202633','#ff9b52','#f4f6fb'],['#28221f','#ffad80','#f4f6fb'],['#1d2924','#76d69a','#f4f6fb'],['#29212e','#d3a0ff','#f4f6fb'],['#2c291d','#f0d36d','#f4f6fb'],['#1d2b2c','#72d9d6','#f4f6fb'],['#2c2027','#ff8fb1','#f4f6fb']],
+         vivid:[['#17243a','#70aaff','#ffffff'],['#352016','#ff9b61','#ffffff'],['#163321','#66e08a','#ffffff'],['#2b183b','#d49aff','#ffffff'],['#39300c','#ffdc57','#ffffff'],['#103536','#5ce4e1','#ffffff'],['#3a1422','#ff7da3','#ffffff']],
+         mono:[['#f0f0f0','#a65312','#3f3f3f'],['#e7e7e7','#a65312','#3f3f3f'],['#f0f0f0','#a65312','#3f3f3f'],['#e7e7e7','#a65312','#3f3f3f'],['#f0f0f0','#a65312','#3f3f3f'],['#e7e7e7','#a65312','#3f3f3f'],['#f0f0f0','#a65312','#3f3f3f']]
+        };
+        let roomStyles={},manualRooms=new Set();
+        function hexRgb(hex){const h=String(hex||'').replace('#','');if(!/^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(h))return null;const x=h.length===3?h.split('').map(c=>c+c).join(''):h;return [parseInt(x.slice(0,2),16),parseInt(x.slice(2,4),16),parseInt(x.slice(4,6),16)]}
+        function rgbHex(rgb){return '#'+rgb.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('')}
+        function mixColor(hex,other,amount){const a=hexRgb(hex),b=hexRgb(other);if(!a||!b)return other;return rgbHex(a.map((v,i)=>v*(1-amount)+b[i]*amount))}
+        function darken(hex,amount){return mixColor(hex,'#000000',amount)}
+        function readableText(bg,preferred){const c=hexRgb(bg),t=hexRgb(preferred);if(!c)return preferred||'#333333';const lum=a=>{const x=a.map(v=>v/255).map(v=>v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2));return .2126*x[0]+.7152*x[1]+.0722*x[2]};const contrast=(a,b)=>(Math.max(lum(a),lum(b))+.05)/(Math.min(lum(a),lum(b))+.05);if(t&&contrast(c,t)>=4.5)return preferred;for(const target of ['#000000','#ffffff']){if(contrast(c,hexRgb(target))>=4.5)return target}if(t){let best='#000000',bestRatio=0;for(let i=0;i<=10;i++){const candidate=mixColor(preferred,'#ffffff',i/10),cc=hexRgb(candidate),ratio=contrast(c,cc);if(ratio>bestRatio){bestRatio=ratio;best=candidate}}for(let i=1;i<=10;i++){const candidate=mixColor(preferred,'#000000',i/10),cc=hexRgb(candidate),ratio=contrast(c,cc);if(ratio>bestRatio){bestRatio=ratio;best=candidate}}return best}return lum(c)>.45?'#292929':'#f4f6fb'}
+        function dominantColor(room){const counts={};sourceMessages.filter(m=>m.room===room).forEach(m=>{const c=safeColor(m.color);if(c)counts[c]=(counts[c]||0)+1});return Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]||''}
+        function defaultsForRoom(room,index){
+         const palette=palettes[$('palette').value]||palettes.light, fallback=palette[index%palette.length], source=dominantColor(room);
+         if($('palette').value==='soft'||$('palette').value==='vivid'){
+           const bg=source?mixColor(source,'#171c25',.82):fallback[0];
+           const fg=source||fallback[1];
+           return {bg,tag:fg,text:'#f4f6fb'};
+         }
+         const bg=source?mixColor(source,'#ffffff',.88):fallback[0];
+         const fg=source?readableText(bg,darken(source,.58)):fallback[1];
+         return {bg,tag:source?readableText(bg,source):fallback[1],text:readableText(bg,source?darken(source,.58):fallback[2])};
+        }
+        function initRoomStyles(){
+         roomStyles={};manualRooms=new Set();const rooms=[...new Set(sourceMessages.map(m=>m.room))];
+         rooms.forEach((r,i)=>roomStyles[r]=defaultsForRoom(r,i));renderRoomSettings();
+        }
+        function renderRoomSettings(){
+         const root=$('roomColorSettings');if(!root)return;
+         const rooms=[...new Set(sourceMessages.map(m=>m.room))];
+         if(!rooms.length){root.innerHTML='<p class="note">載入聊天紀錄後，這裡會出現各聊天室的顏色設定。</p>';return}
+         root.innerHTML=rooms.map((r,i)=>{const st=roomStyles[r]||defaultsForRoom(r,i);return '<div class="room-setting"><div class="room-setting-title">'+escapeHtml(r)+'</div><div class="color-pair"><label class="color-control">背景色 <input type="color" data-room="'+escapeHtml(r)+'" data-prop="bg" value="'+st.bg+'"></label><label class="color-control">文字色 <input type="color" data-room="'+escapeHtml(r)+'" data-prop="text" value="'+st.text+'"></label></div><div class="color-pair" style="margin-top:8px"><label class="color-control">標籤／邊框色 <input type="color" data-room="'+escapeHtml(r)+'" data-prop="tag" value="'+st.tag+'"></label><span class="color-hex">背景 '+st.bg+'<br>文字 '+st.text+'</span></div></div>'}).join('');
+         root.querySelectorAll('input[type=color]').forEach(input=>input.addEventListener('input',e=>{const el=e.target,r=el.dataset.room,p=el.dataset.prop;if(!roomStyles[r])roomStyles[r]=defaultsForRoom(r,0);roomStyles[r][p]=el.value;manualRooms.add(r);const card=el.closest('.room-setting');const hex=card.querySelector('.color-hex');hex.innerHTML='背景 '+roomStyles[r].bg+'<br>文字 '+roomStyles[r].text;if(sourceMessages.length)renderPreview()}));
+        }
+        function clean(s){return (s||'').replace(/\s+/g,' ').trim()}
+        function roomFrom(text){let t=clean(text);let m=t.match(/^\[([^\]]+)\]/);return m?'['+m[1]+']':'[未分類]'}
+        function addMessage(room,speaker,time,content,color,system){sourceMessages.push({room:roomFrom(room),speaker:clean(speaker)||'未知說話者',time:clean(time),content:content||'',color:color||'',system:!!system})}
+        function colorFrom(el){if(!el)return '';const style=el.getAttribute('style')||'';return (style.match(/(?:^|;)\s*color\s*:\s*(#[0-9a-f]{3,8}|rgba?\([^)]*\)|[a-z]+)\s*(?:;|$)/i)||[])[1]||((style.match(/--speaker-color\s*:\s*(#[0-9a-f]{3,8})/i)||[])[1]||'')}
+        function safeColor(c){if(!c)return '';if(/^#[0-9a-f]{3,8}$/i.test(c))return c;const m=String(c).match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i);if(m)return '#'+[m[1],m[2],m[3]].map(v=>Math.max(0,Math.min(255,Number(v))).toString(16).padStart(2,'0')).join('');return ''}
+        function parse(html){
+         sourceMessages=[];const doc=new DOMParser().parseFromString(html,'text/html');
+         const modern=doc.querySelectorAll('.message').length>0;
+         if(modern){
+          doc.querySelectorAll('.message').forEach(el=>{
+           const ch=el.querySelector('.channel-name'),sp=el.querySelector('.speaker'),tm=el.querySelector('time'),tx=el.querySelector('.message-text');
+           if(!tx)return;
+           const col=sp?safeColor(colorFrom(sp)||colorFrom(el.querySelector('.speaker'))):'';
+           addMessage(ch?ch.textContent:'',sp?sp.textContent:'',tm?(tm.textContent||tm.getAttribute('datetime')):'',tx.innerHTML,col,el.classList.contains('system'));
+          });detectedFormat='新版（.message / .channel-name）';
+         }else{
+          doc.querySelectorAll('body > p, body p').forEach(el=>{
+           const spans=Array.from(el.children).filter(x=>x.tagName==='SPAN');
+           if(spans.length<2)return;
+           let room='',speaker='',content='',color=safeColor(colorFrom(spans[1])||colorFrom(el));
+           room=spans[0].textContent;speaker=spans[1].textContent;
+           const colon=Array.from(el.childNodes).find(n=>n.nodeType===3&&n.textContent.includes(':'));
+           // The message body is normally the last span, which also preserves line breaks.
+           content=spans.length>=3?spans.slice(2).map(x=>x.innerHTML).join(' '):'';
+           if(!content){const all=el.querySelectorAll('span');if(all.length>=3)content=all[all.length-1].innerHTML}
+           if(!content){
+            const raw=el.innerHTML;let after=raw;
+            const matches=[...raw.matchAll(/<\/span>/gi)];if(matches.length>=2)after=raw.slice(matches[1].index+7).replace(/^\s*:\s*/,'').replace(/<\/p>\s*$/i,'');
+            content=after;
+           }
+           addMessage(room,speaker,'',content,color,room.includes('[main]'));
+          });
+          detectedFormat='舊版（每則訊息以 <p> 保存）';
+         }
+         return {count:sourceMessages.length,format:detectedFormat};
+        }
+        function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+        function buildOutput(limit){
+         const opts={bg:$('bg').checked,border:$('border').checked,tag:$('tag').checked,side:$('side').checked,stripe:$('stripe').checked,hide:$('hide').checked,group:$('group').checked,speaker:$('speaker').checked};
+         const palette=palettes[$('palette').value]||palettes.light,rooms=[...new Set(sourceMessages.map(m=>m.room))],map={};
+         rooms.forEach((r,i)=>{const st=roomStyles[r]||defaultsForRoom(r,i);map[r]=[st.bg,st.tag,st.text]});
+         const isDark=['soft','vivid'].includes($('palette').value),pageBg=isDark?'#10131a':'#f6f7fa',pageText=isDark?'#edf1f7':'#252b34',cardDefault=isDark?'#171c25':'#ffffff',metaDefault=isDark?'#c3ccda':'#596273',tagBg=isDark?'#111722':'#ffffff';
+         const width=$('width').value,title=$('title').value.trim()||'CCFOLIA 聊天紀錄';
+         let body='',prev='';
+         sourceMessages.slice(0,limit||sourceMessages.length).forEach(m=>{
+          const c=map[m.room]||palette[0],classes=['msg'];if(opts.bg)classes.push('mode-bg');if(opts.border)classes.push('mode-border');if(opts.tag)classes.push('mode-tag');if(opts.side)classes.push('mode-side');if(opts.stripe)classes.push('mode-stripe');if(opts.hide)classes.push('hide-room');if(m.system)classes.push('system');
+          if(opts.group&&m.room!==prev)body+='<div class="room-divider" style="--room-color:'+c[1]+';--room-border:'+darken(c[1],.18)+';--room-text:'+c[2]+';--divider-text:'+readableText(c[0],c[1])+';--room-bg:'+c[0]+'"><span>'+escapeHtml(m.room)+'</span></div>';
+          body+='<article class="'+classes.join(' ')+'" style="--room-bg:'+c[0]+';--room-color:'+c[1]+';--room-text:'+c[2]+';--room-tint:'+mixColor(c[0],cardDefault,.18)+';--room-meta:'+metaDefault+';--room-tag-bg:'+tagBg+'">'+(opts.side?'<i class="side-label"></i>':'')+'<div class="meta"><span class="room" style="color:'+c[1]+'">'+escapeHtml(m.room)+'</span>'+(opts.speaker?'<span class="speaker" '+(m.color?'style="color:'+escapeHtml(m.color)+'"':'')+'>'+escapeHtml(m.speaker)+'</span>':'<span class="speaker">'+escapeHtml(m.speaker)+'</span>')+(m.time?'<time>'+escapeHtml(m.time)+'</time>':'')+'</div><div class="content">'+m.content+'</div></article>';
+          prev=m.room;
+         });
+         return '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escapeHtml(title)+'</title><style>'+
+         ' :root{color-scheme:'+ (isDark?'dark':'light') +';background:'+pageBg+';color:'+pageText+'}*{box-sizing:border-box}body{margin:0;background:'+pageBg+';color:'+pageText+';font:15px/1.6 system-ui,-apple-system,"Noto Sans TC",sans-serif}.wrap{max-width:'+width+';margin:auto;padding:20px 16px 60px}h1{font-size:1.5rem;font-weight:850;color:'+readableText(pageBg,pageText)+';letter-spacing:.01em}.msg{position:relative;padding:13px 14px;margin:0 0 10px;background:'+cardDefault+';border:1px solid '+(isDark?'#343d4d':'#d9dee7')+';border-radius:10px;overflow-wrap:anywhere}.meta{display:flex;gap:9px;flex-wrap:wrap;font-size:.86rem;color:var(--room-meta,'+metaDefault+');margin-bottom:6px}.speaker{font-weight:750}.room{font-weight:800}.content p{margin:0 0 8px}.content,.content *{color:var(--room-text,'+pageText+')!important}.content a{color:var(--room-color)!important;text-decoration:underline}.content img{max-width:100%;height:auto}.mode-bg{background:var(--room-bg)}.mode-border{border:1px solid var(--room-border,var(--room-color))}.mode-tag .room{display:inline-block;border:1px solid var(--room-color);border-radius:5px;padding:0 7px;background:var(--room-tag-bg,'+tagBg+')}.mode-stripe{background:linear-gradient(90deg,var(--room-tint),'+cardDefault+' 88%)}.side-label{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:10px 0 0 10px;background:var(--room-color)}.hide-room .room{display:none}.system{font-style:italic}.room-divider{margin:22px 0 12px;padding:8px 12px;border:1px solid var(--room-border);background:var(--room-bg);font-weight:800;border-radius:7px;color:var(--divider-text)}.room-divider span{color:var(--divider-text)}@media(max-width:600px){.wrap{padding:12px 8px 40px}.msg{padding:11px}.meta{gap:6px}}'+
+         '</style></head><body><main class="wrap"><h1>'+escapeHtml(title)+'</h1><p>共 '+sourceMessages.length+' 則訊息｜聊天室辨識版</p>'+body+'</main></body></html>';
+        }
+        function renderPreview(){
+         // Use the actual generated HTML in an iframe so preview CSS, title colors,
+         // room divider styles, responsive layout and message cards match the download.
+         const html=buildOutput(250);lastOutput=buildOutput();
+         const frame=document.createElement('iframe');
+         frame.className='preview-frame';
+         frame.title='輸出 HTML 的實際預覽（最多顯示前 250 則訊息）';
+         frame.setAttribute('sandbox','allow-same-origin');
+         frame.srcdoc=html;
+         $('preview').replaceChildren(frame);
+         $('downloadBtn').disabled=!sourceMessages.length;
+        }
+        async function loadFile(f){
+         if(!f)return;
+         if(!/\\.html?$/i.test(f.name) && f.type!=='text/html'){$('status').textContent='請選擇 HTML 聊天紀錄檔案。';return}
+         sourceName=f.name;$('fileName').textContent=f.name;
+         try{const html=await f.text();const r=parse(html);initRoomStyles();$('status').textContent='已載入：'+f.name+'｜格式判定：'+r.format+'｜解析到 '+r.count+' 則訊息'+(r.count===0?'。未能辨識格式，請確認是否為 CCFOLIA 匯出的 HTML。':'。');
+         $('previewBtn').disabled=r.count===0;$('downloadBtn').disabled=true;$('preview').textContent=r.count?'按「產生／更新預覽」查看樣式。':'沒有解析到訊息。';
+         }catch(err){$('status').textContent='讀取失敗：'+err.message}
+        }
+        $('file').addEventListener('change',e=>loadFile(e.target.files&&e.target.files[0]));
+        const dropZone=$('dropZone');
+        dropZone.addEventListener('click',e=>{if(e.target.closest('.file-pick'))return;$('file').click()});
+        dropZone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}});
+        ['dragenter','dragover'].forEach(type=>dropZone.addEventListener(type,e=>{e.preventDefault();dropZone.classList.add('dragover')}));
+        ['dragleave','drop'].forEach(type=>dropZone.addEventListener(type,e=>{e.preventDefault();dropZone.classList.remove('dragover')}));
+        dropZone.addEventListener('drop',e=>loadFile(e.dataTransfer.files&&e.dataTransfer.files[0]));
+        $('previewBtn').addEventListener('click',renderPreview);
+        ['bg','border','tag','side','stripe','hide','group','speaker','width','title'].forEach(id=>$(id).addEventListener('change',()=>{if(sourceMessages.length)renderPreview()}));
+        $('palette').addEventListener('change',()=>{if(sourceMessages.length){initRoomStyles();renderPreview()}});
+        $('downloadBtn').addEventListener('click',()=>{
+         if(!lastOutput)lastOutput=buildOutput();const blob=new Blob([lastOutput],{type:'text/html;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+         a.href=url;a.download=(sourceName.replace(/\.(html?|HTML?)$/,'')||'chatlog')+'_聊天室辨識版.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        });
+        })();
+    </script>
+</body>
+
+</html>
